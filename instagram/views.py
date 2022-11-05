@@ -1,10 +1,13 @@
 from django.shortcuts import render
 from rest_framework.decorators import api_view, action
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.generics import RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
+from .permissions import IsAuthorOrReadonly
 from .serializers import PostSerializer
 from .models import Post
 from rest_framework import generics
@@ -13,6 +16,11 @@ from rest_framework import generics
 class PostViewSet(ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated, IsAuthorOrReadonly]  # 인증이 됨을 보장 받을수 있음.
+
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ['message']
+    ordering_fields = ['id']
 
     def perform_create(self, serializer):
         author = self.request.user
@@ -55,7 +63,7 @@ class PostViewSet(ModelViewSet):
 class PostDetailAPIView(RetrieveAPIView):
     queryset = Post.objects.all()
     renderer_classes = [TemplateHTMLRenderer]
-    template_name="instagram/post_detail.html"
+    template_name = "instagram/post_detail.html"
 
     def get(self, request, *args, **kwargs):
         post = self.get_object()
